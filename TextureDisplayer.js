@@ -1,7 +1,7 @@
 (function () {
 
-  function hello(name) {
-    console.log("Hello " + name);
+  function DisplayTexture(name) {
+    console.log("Hello" + name);
   }
 
   function add(a, b) {
@@ -9,7 +9,7 @@
   }
 
   // expose globally
-  window.MyLib = {
+  window.TextureDisplayer = {
     hello,
     add
   };
@@ -31,7 +31,7 @@ class TexturePreview {
         this.context.configure({
             device,
             format: this.format,
-            alphaMode: "opaqueaaa"
+            alphaMode: "opaque"
         });
         this.init();
     }
