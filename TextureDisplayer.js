@@ -1,3 +1,4 @@
+console.log("HAHA INITIALIZED?")
 (function () {
 
   function DisplayTexture(name) {
@@ -7,7 +8,7 @@
   function add(a, b) {
     return a + b;
   }
-
+console.log("THE TEXTURE IS NO")
   // expose globally
   window.TextureDisplayer = {
     DisplayTexture,
