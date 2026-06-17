@@ -31,7 +31,7 @@ class TexturePreview {
         this.context.configure({
             device,
             format: this.format,
-            alphaMode: "opaque"
+            alphaMode: "opaqueaaa"
         });
         this.init();
     }
