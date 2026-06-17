@@ -10,7 +10,7 @@
 
   // expose globally
   window.TextureDisplayer = {
-    hello,
+    DisplayTexture,
     add
   };
 
