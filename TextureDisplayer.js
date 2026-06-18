@@ -1,21 +1,72 @@
-console.log("HAHA INITIALIZED?")
+let canvas
+let context
+console.log("INITIALIZED")
+async function InitEverything(){
+            canvas = document.createElement("canvas");
+        canvas.width = 128;
+        canvas.height = 128;
+        context = this.canvas.getContext("webgpu");
+        format = navigator.gpu.getPreferredCanvasFormat();
+
+        this.context.configure({
+            device,
+            format: this.format,
+            alphaMode: "opaque"
+        });
+    document.body.appendChild(canvas);
+
+     canvas.style.position = "fixed";
+     canvas.style.top = "0";
+     canvas.style.left = "0";
+     canvas.style.width = "100vw";
+    canvas.style.height = "100vh";
+}
+function getSampleType(format) {
+
+    switch(format) {
+
+        case "r32float":
+        case "rg32float":
+        case "rgba32float":
+            return "unfilterable-float";
+
+        case "rgba16float":
+        case "rg16float":
+        case "r16float":
+            return "float";
+
+        case "rgba8unorm":
+        case "bgra8unorm":
+            return "float";
+
+        case "rgba32uint":
+            return "uint";
+
+        case "rgba32sint":
+            return "sint";
+
+        default:
+            throw new Error(
+                "Unsupported format: " + format
+            );
+    }
+}
+promisea = InitEverything
+
 (function () {
-
-  function DisplayTexture(name) {
-    console.log("Hello" + name);
+  async function DisplayTexture(device, sourceTexture) {
+    await promisea
+    const daPreview = new TexturePreview(device, sourceTexture)
+    previews.push(daPreview)
+    daPreview.render()
   }
 
-  function add(a, b) {
-    return a + b;
-  }
-console.log("THE TEXTURE IS NO")
+
+
   // expose globally
   window.TextureDisplayer = {
     DisplayTexture,
-    add
   };
-
-const TextureList = [];
 
 const previews = [];
 class TexturePreview {
@@ -23,17 +74,7 @@ class TexturePreview {
         this.device = device;
         this.sourceTexture = sourceTexture;
 
-        this.canvas = document.createElement("canvas");
-        this.canvas.width = 128;
-        this.canvas.height = 128;
-        this.context = this.canvas.getContext("webgpu");
-        this.format = navigator.gpu.getPreferredCanvasFormat();
 
-        this.context.configure({
-            device,
-            format: this.format,
-            alphaMode: "opaque"
-        });
         this.init();
     }
     
@@ -95,7 +136,7 @@ fn fs(in : VSOut) -> @location(0) vec4f {
 
 
      this.bindLayout =
-device.createBindGroupLayout({
+this.device.createBindGroupLayout({
     entries: [{
         binding:0,
         visibility:
@@ -185,6 +226,7 @@ device.createBindGroupLayout({
         pass.setBindGroup(0, this.bindGroup);
 
         pass.draw(3);
+        Console.log("YUP RENDERING")
         pass.end();
 
         this.device.queue.submit([
