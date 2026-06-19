@@ -1,5 +1,17 @@
 let canvas
 let context
+function resize() {
+
+    if(!canvas) return;
+  const dpr = window.devicePixelRatio || 1;
+
+  canvas.width = window.innerWidth * dpr;
+  canvas.height = window.innerHeight * dpr;
+}
+
+resize();
+window.addEventListener("resize", resize);
+
 console.log("INITIALIZED")
 async function InitEverything(){
             canvas = document.createElement("canvas");
@@ -51,7 +63,8 @@ function getSampleType(format) {
             );
     }
 }
-promisea = InitEverything
+promisea = InitEverything()
+
 
 (function () {
   async function DisplayTexture(device, sourceTexture) {
@@ -73,7 +86,6 @@ class TexturePreview {
     constructor(device, sourceTexture) {
         this.device = device;
         this.sourceTexture = sourceTexture;
-
 
         this.init();
     }
