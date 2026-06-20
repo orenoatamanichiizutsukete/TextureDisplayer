@@ -1,23 +1,43 @@
 
-let canvas
-let renderer
-console.log("YUP INITIALIZaED")
-
-function resize() {
-
-    if(!canvas) return;
-  const dpr = window.devicePixelRatio || 1;
-
-  canvas.width = window.innerWidth * dpr;
-  canvas.height = window.innerHeight * dpr;
-}
-
-resize();
-window.addEventListener("resize", resize);
 
 
-function getSampleType(format) {
 
+(function () {
+        const container = document.createElement("div");
+        container.style.display = "flex";
+        Object.assign(container.style, {
+    position: "absolute",
+    top: "0",
+    left: "0",
+    width: "100px",
+    height: "100px",
+    zIndex: "2147483647", // Maximum 32-bit signed integer
+});
+
+
+    function SetPos(top, left){
+container.style.top = `${top}px`;
+container.style.left = `${left}px`;
+    }
+
+
+
+
+
+document.body.appendChild(container);
+
+    function     start() {
+        const loop = () => {
+            for (let i = 0; i < previews.length; i++) {
+                previews[i].render()
+            }
+            requestAnimationFrame(loop);
+        };
+
+        requestAnimationFrame(loop);
+    }
+
+    function getSampleType(format) {
     switch(format) {
 
         case "r32float":
@@ -48,55 +68,60 @@ function getSampleType(format) {
 }
 
 
-(function () {
-    
+    function Add(device, texture){
+        TextureList.push(texture)
+            previews.push(
+        new TexturePreview(device, texture)
+    );
+    }
 
-  async function DisplayTexture(device, sourceTexture, id) {
-    if(savedTextures.length > 4) return;
-    device = device
-
-    if(!renderer){
-            renderer = new Renderer(device, sourceTexture.format)
-    } 
-    savedTextures.push(sourceTexture)
-  }
-
-
-
-  // expose globally
-  console.log("YEAHAHA")
   window.TextureDisplayer = {
-    DisplayTexture,
+    Add,
+    SetPos
   };
-const savedTextures = [];
 
-const previews = [];
+  const TextureList = [];
+  const previews = [];
+  
+  for (const texture of TextureList) {
 
-function normalizeToRGBA(imageData) {
-  // expand channels to RGBA
 }
 
-class Renderer {
-    constructor(device, format) {
+  class TexturePreview {
+    constructor(device, sourceTexture) {
         this.device = device;
+        this.sourceTexture = sourceTexture;
         this.canvas = document.createElement("canvas");
-             this.canvas.style.position = "fixed";
-             this.canvas.style.top = "0";
-             this.canvas.style.left = "0";
-             this.canvas.style.width = "100vw";
-             this.canvas.style.height = "100vh";
-             this.format = format
+        Object.assign(this.canvas.style, {
+    position: "static",
+    top: "0",
+    left: "0",
+    width: "100px",
+    height: "100px",
+    zIndex: "2147483647", // Maximum 32-bit signed integer
+});
+
+        container.appendChild(this.canvas);
+        this.canvas.width = 128;
+        this.canvas.height = 128;
+        this.context = this.canvas.getContext("webgpu");
+        this.format = navigator.gpu.getPreferredCanvasFormat();
+
+        this.context.configure({
+            device,
+            format: this.format,
+            alphaMode: "opaque"
+        });
         this.init();
     }
-    
+
     init() {
         this.shaderCode = `
-@group(0) @binding(0) var textures : texture_2d_array<f32>;
+@group(0) @binding(0) var tex : texture_2d<f32>;
 
 struct VSOut {
-  @builtin(position) pos: vec4<f32>,
-  @location(0) uv: vec2<f32>,
-  @location(1) texIndex: u32,
+    @builtin(position) position : vec4f,
+    @location(0) uv : vec2f,
 };
 
 @vertex
@@ -137,39 +162,26 @@ fn fs(in : VSOut) -> @location(0) vec4f {
     );
 
     return vec4f(c.x * 4, c.y * 4, c.z  * 4,c.w * 4) ;
-}
+
+    }
 `;
                this.module = this.device.createShaderModule({
             code: this.shaderCode
         });
-        const textureFormat = this.format
+        const textureFormat = this.sourceTexture.format
         const sampleType =
     getSampleType(textureFormat);
 
-const textureArray = this.device.createTexture({
-  size: [256,256, savedTextures.length],
-  format: "rgba8unorm",
-  usage:
-    GPUTextureUsage.TEXTURE_BINDING |
-    GPUTextureUsage.COPY_DST
-});
-for (let i = 0; i < savedTextures.length; i++) {
-  this.device.queue.copyExternalImageToTexture(
-    { source: textures[i] },
-    {
-      texture: textureArray,
-      origin: [0, 0, i] //  layer index
-    },
-    [width, height]
-  );
-}
+
      this.bindLayout =
 this.device.createBindGroupLayout({
     entries: [{
         binding:0,
         visibility:
             GPUShaderStage.FRAGMENT,
-        texture:textureArray
+        texture:{
+            sampleType
+        }
     }]
 });
         this.bindLayout =
@@ -229,8 +241,7 @@ this.device.createBindGroupLayout({
     
         
 }
-
-    render(textureIndex) {
+    render() {
 
         const encoder =
             this.device.createCommandEncoder();
@@ -247,21 +258,16 @@ this.device.createBindGroupLayout({
                 }]
             });
 
-
         pass.setPipeline(this.pipeline);
         pass.setBindGroup(0, this.bindGroup);
 
-        pass.draw(3, textureIndex);
-        Console.log("YUP RENDERING")
+        pass.draw(3);
         pass.end();
 
         this.device.queue.submit([
             encoder.finish()
         ]);
-        
-
     }
-
-    
 }
+start()
 })();
