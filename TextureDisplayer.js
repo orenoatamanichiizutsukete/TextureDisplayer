@@ -1,5 +1,8 @@
+
 let canvas
-let context
+let renderer
+console.log("YUP INITIALIZaED")
+
 function resize() {
 
     if(!canvas) return;
@@ -12,27 +15,7 @@ function resize() {
 resize();
 window.addEventListener("resize", resize);
 
-console.log("INITIALIZED")
-async function InitEverything(){
-            canvas = document.createElement("canvas");
-        canvas.width = 128;
-        canvas.height = 128;
-        context = this.canvas.getContext("webgpu");
-        format = navigator.gpu.getPreferredCanvasFormat();
 
-        this.context.configure({
-            device,
-            format: this.format,
-            alphaMode: "opaque"
-        });
-    document.body.appendChild(canvas);
-
-     canvas.style.position = "fixed";
-     canvas.style.top = "0";
-     canvas.style.left = "0";
-     canvas.style.width = "100vw";
-    canvas.style.height = "100vh";
-}
 function getSampleType(format) {
 
     switch(format) {
@@ -63,40 +46,57 @@ function getSampleType(format) {
             );
     }
 }
-promisea = InitEverything()
 
 
 (function () {
-  async function DisplayTexture(device, sourceTexture) {
-    await promisea
-    const daPreview = new TexturePreview(device, sourceTexture)
-    previews.push(daPreview)
-    daPreview.render()
+    
+
+  async function DisplayTexture(device, sourceTexture, id) {
+    if(savedTextures.length > 4) return;
+    device = device
+
+    if(!renderer){
+            renderer = new Renderer(device, sourceTexture.format)
+    } 
+    savedTextures.push(sourceTexture)
   }
 
 
 
   // expose globally
+  console.log("YEAHAHA")
   window.TextureDisplayer = {
     DisplayTexture,
   };
+const savedTextures = [];
 
 const previews = [];
-class TexturePreview {
-    constructor(device, sourceTexture) {
-        this.device = device;
-        this.sourceTexture = sourceTexture;
 
+function normalizeToRGBA(imageData) {
+  // expand channels to RGBA
+}
+
+class Renderer {
+    constructor(device, format) {
+        this.device = device;
+        this.canvas = document.createElement("canvas");
+             this.canvas.style.position = "fixed";
+             this.canvas.style.top = "0";
+             this.canvas.style.left = "0";
+             this.canvas.style.width = "100vw";
+             this.canvas.style.height = "100vh";
+             this.format = format
         this.init();
     }
     
     init() {
         this.shaderCode = `
-@group(0) @binding(0) var tex : texture_2d<f32>;
+@group(0) @binding(0) var textures : texture_2d_array<f32>;
 
 struct VSOut {
-    @builtin(position) position : vec4f,
-    @location(0) uv : vec2f,
+  @builtin(position) pos: vec4<f32>,
+  @location(0) uv: vec2<f32>,
+  @location(1) texIndex: u32,
 };
 
 @vertex
@@ -142,20 +142,34 @@ fn fs(in : VSOut) -> @location(0) vec4f {
                this.module = this.device.createShaderModule({
             code: this.shaderCode
         });
-        const textureFormat = this.sourceTexture.format
+        const textureFormat = this.format
         const sampleType =
     getSampleType(textureFormat);
 
-
+const textureArray = this.device.createTexture({
+  size: [256,256, savedTextures.length],
+  format: "rgba8unorm",
+  usage:
+    GPUTextureUsage.TEXTURE_BINDING |
+    GPUTextureUsage.COPY_DST
+});
+for (let i = 0; i < savedTextures.length; i++) {
+  this.device.queue.copyExternalImageToTexture(
+    { source: textures[i] },
+    {
+      texture: textureArray,
+      origin: [0, 0, i] //  layer index
+    },
+    [width, height]
+  );
+}
      this.bindLayout =
 this.device.createBindGroupLayout({
     entries: [{
         binding:0,
         visibility:
             GPUShaderStage.FRAGMENT,
-        texture:{
-            sampleType
-        }
+        texture:textureArray
     }]
 });
         this.bindLayout =
@@ -216,7 +230,7 @@ this.device.createBindGroupLayout({
         
 }
 
-    render() {
+    render(textureIndex) {
 
         const encoder =
             this.device.createCommandEncoder();
@@ -237,7 +251,7 @@ this.device.createBindGroupLayout({
         pass.setPipeline(this.pipeline);
         pass.setBindGroup(0, this.bindGroup);
 
-        pass.draw(3);
+        pass.draw(3, textureIndex);
         Console.log("YUP RENDERING")
         pass.end();
 
